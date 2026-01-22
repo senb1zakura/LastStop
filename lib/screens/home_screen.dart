@@ -1,13 +1,42 @@
 import 'package:flutter/material.dart';
 import '../widgets/bottom_nav.dart';
 import '../widgets/app_button.dart';
+import '../services/alarm_service.dart';
 import '../utils/constants.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final AlarmService _alarm = AlarmService.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _alarm.addListener(_onServiceUpdated);
+  }
+
+  void _onServiceUpdated() {
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _alarm.removeListener(_onServiceUpdated);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final target = _alarm.target;
+    final isEnabled = _alarm.enabled;
+    final currentStop = _alarm.stops.isNotEmpty ? _alarm.stops[_alarm.currentIndex] : null;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -61,35 +90,51 @@ class HomeScreen extends StatelessWidget {
 
                 const SizedBox(height: 18),
 
-                // Placeholder mini map card
+                // Status card
                 Container(
-                  height: 140,
                   width: double.infinity,
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: kCardColor,
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [BoxShadow(color: Color.fromRGBO(0,0,0,0.04), blurRadius: 12, offset: const Offset(0,6))],
                   ),
-                  child: const Center(
-                    child: Text('MINI MAP', style: TextStyle(fontWeight: FontWeight.w600, letterSpacing: 1)),
-                  ),
-                ),
-
-                const SizedBox(height: 14),
-
-                // Main content card
-                Expanded(
-                  child: Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: kCardColor,
-                      borderRadius: kRadius,
-                      boxShadow: [BoxShadow(color: Color.fromRGBO(0,0,0,0.03), blurRadius: 18, offset: const Offset(0,8))],
-                    ),
-                    padding: const EdgeInsets.all(kPadding),
-                    child: const Center(
-                      child: Text('MAPS', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            isEnabled ? Icons.alarm_on : Icons.alarm_off,
+                            color: isEnabled ? kAccentColor : Colors.grey,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            isEnabled ? 'Будильник активен' : 'Будильник выключен',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: isEnabled ? kAccentColor : Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      if (target != null) ...[
+                        Text('Целевая остановка:', style: TextStyle(fontSize: 14, color: Colors.black54)),
+                        const SizedBox(height: 4),
+                        Text(target.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                      ] else ...[
+                        Text('Остановка не выбрана', style: TextStyle(fontSize: 14, color: Colors.black54)),
+                      ],
+                      const SizedBox(height: 8),
+                      if (currentStop != null) ...[
+                        Text('Текущая остановка:', style: TextStyle(fontSize: 14, color: Colors.black54)),
+                        const SizedBox(height: 4),
+                        Text(currentStop.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                      ],
+                    ],
                   ),
                 ),
 
